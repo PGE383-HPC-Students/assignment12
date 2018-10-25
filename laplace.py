@@ -19,7 +19,7 @@ class Grid:
         
         self.dy = (ymax - ymin) / (ny - 1)
         
-        self.u = np.zeros((nx, ny), dtype=np.double)
+        self.u = np.zeros((ny, nx), dtype=np.double)
         
 
     def set_boundary_condtion(self, side = 'top', boundary_condition_function = lambda x,y: 0.0):
@@ -28,18 +28,20 @@ class Grid:
         
         xmax, ymax = self.xmax, self.ymax
         
-        x = np.arange(xmin, xmax + self.dx * 0.5, self.dx)
+        x = np.linspace(xmin, xmax, self.nx)
         
-        y = np.arange(ymin, ymax + self.dy * 0.5, self.dy)
+        y = np.linspace(ymin, ymax, self.ny)
         
         if side == 'bottom':
-            self.u[0 ,:] = boundary_condition_function(xmin,y)
+            self.u[0 ,:] = boundary_condition_function(ymax,x)
         elif side == 'top':
-            self.u[-1 ,:] = boundary_condition_function(xmin,y)
+            self.u[-1 ,:] = boundary_condition_function(ymin,x)
         elif side == 'left':
             self.u[:, 0] = boundary_condition_function(xmin,y)
         elif side == 'right':
-            self.u[:, -1] = boundary_condition_function(xmin,y)
+            self.u[:, -1] = boundary_condition_function(xmax,y)
+            
+        self.initial_u = self.u.copy()
         
 
 class LaplaceSolver(Grid):
@@ -54,7 +56,7 @@ class LaplaceSolver(Grid):
         
         u = self.u
         
-        nx, ny = u.shape        
+        ny, nx = u.shape        
         
         dx2, dy2 = self.dx ** 2, self.dy ** 2
         
@@ -81,6 +83,7 @@ class LaplaceSolver(Grid):
             Calls iterate() sequentially until the error is reduced below a tolerance.
         """
         
+        
         for i in range(max_iterations):
         
             error = self.iterate()
@@ -96,6 +99,7 @@ class LaplaceSolver(Grid):
             Calls iterate.iterate() sequentially until the error is reduced below a tolerance.
         """
         
+        
         for i in range(max_iterations):
         
             error = iterate.iterate(self.u, self.dx, self.dy)
@@ -103,12 +107,36 @@ class LaplaceSolver(Grid):
             if error < tolerance:
                 if not quiet:
                     print("Solution converged in " + str(i) + " iterations.")
-                break
+                return 
+            
+        print("Solution FAILED to converged in " + str(max_iterations) + " iterations.")
                 
+        return
+
+
+                
+    def swig_solve_red_black(self, max_iterations=10000, tolerance=1.0e-16, quiet=False):        
+        """
+            Calls iterate.iterate() sequentially until the error is reduced below a tolerance.
+        """
+        
+        
+        for i in range(max_iterations):
+        
+            error = iterate.iterate_red_black(self.u, self.dx, self.dy)
+            
+            if error < tolerance:
+                if not quiet:
+                    print("Solution converged in " + str(i) + " iterations.")
+                return 
+            
+        print("Solution FAILED to converged in " + str(max_iterations) + " iterations.")
+                
+        return
                 
     def get_solution(self):
         return self.u
     
     def reset(self):
-        self.u = np.zeros((self.nx, self.ny), dtype=np.double)
+        self.u = self.initial_u.copy()
         return

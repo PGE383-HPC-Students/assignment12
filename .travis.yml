@@ -1,7 +1,7 @@
 sudo: false
 language: python
 env:
-  - ASSIGNMENT=assignment10
+  - ASSIGNMENT=assignment12
 install:
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
   - bash miniconda.sh -b -p $HOME/miniconda3
@@ -10,11 +10,11 @@ install:
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
   - conda info -a
-  - conda install python=3.6 numpy scipy matplotlib swig
-  - pip install -q nose2
+  - conda install -c conda-forge python=3.6 numpy swig nbconvert ipython
   - "curl -H \"Authorization: token ${GH_TOKEN}\" -H 'Accept: application/vnd.github.v3.raw' -O --location \"https://api.github.com/repos/PGE383-HPC/${ASSIGNMENT}/contents/test.py\""
-  - swig -python iterate.i
-  - gcc -fPIC -std=c99 -shared iterate*.c -o _iterate.so -I$HOME/miniconda3/include/python3.6m -I$HOME/miniconda3/lib/python3.6/site-packages/numpy/core/include
+  - rm -f iterate_*.c *.so iterate.py
+  - export LD_LIBRARY_PATH=`pwd`:$LD_LIBRARY_PATH 
 script:
-  - nose2
-
+  - swig -python iterate.i
+  - gcc -fPIC -shared iterate*.c -o _iterate.so -I$HOME/miniconda3/include/python3.6m -I$HOME/miniconda3/lib/python3.6/site-packages/numpy/core/include
+  - python test.py
