@@ -1,5 +1,7 @@
-sudo: false
+os: linux
 language: python
+notifications: 
+  email: false
 env:
   - ASSIGNMENT=assignment12
 install:
@@ -10,11 +12,13 @@ install:
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
   - conda info -a
-  - conda install -c conda-forge python=3.6 numpy swig nbconvert ipython
+  - conda env create -f environment.yml
+  - source $(conda info --root)/etc/profile.d/conda.sh
+  - conda activate $ASSIGNMENT
   - "curl -H \"Authorization: token ${GH_TOKEN}\" -H 'Accept: application/vnd.github.v3.raw' -O --location \"https://api.github.com/repos/PGE383-HPC/${ASSIGNMENT}/contents/test.py\""
   - rm -f iterate_*.c *.so iterate.py
   - export LD_LIBRARY_PATH=`pwd`:$LD_LIBRARY_PATH 
 script:
   - swig -python iterate.i
-  - gcc -fPIC -shared iterate*.c -o _iterate.so -I$HOME/miniconda3/include/python3.6m -I$HOME/miniconda3/lib/python3.6/site-packages/numpy/core/include
-  - python test.py
+  - gcc -fPIC -shared iterate*.c -o _iterate.so -I$CONDA_PREFIX/include/python3.8 -I$CONDA_PREFIX/lib/python3.8/site-packages/numpy/core/include
+  - python -m unittest test.py -vvv
